@@ -1,0 +1,8 @@
+{
+  "name": "ai-brain-engine-v6",
+  "version": "0.1.0",
+  "description": "Motor pessoal do Rafael: injeta as regras aprendidas no início da sessão, mede a stack de verdade (.NET e Angular), barra 'pronto' sem prova e documenta no vault sozinho. Zero arquivos nos repositórios de trabalho.",
+  "author": {
+    "name": "Rafael Giovannini"
+  }
+}

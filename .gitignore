@@ -1,0 +1,7 @@
+_prova/
+__pycache__/
+*.pyc
+.venv/
+node_modules/
+sensores/**/bin/
+sensores/**/obj/

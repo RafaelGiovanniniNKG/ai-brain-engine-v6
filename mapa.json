@@ -1,0 +1,24 @@
+{
+  "_comentario": "pasta do repo em C:\\Github  ->  pasta do projeto no vault. Sem entrada aqui, o injetor tenta casar por nome e, se não achar, injeta só as regras.",
+  "vault": "C:/Github/obsidian-vault",
+  "projetos": "Projetos",
+  "mapa": {
+    "cqrs-reference-architecture": "cqrs-reference-architecture",
+    "Projeto-SiStockler.OperationalManagement": "SiStockler · OperationalManagement",
+    "sistockler-web": "sistockler-web",
+    "Projeto-SiStockler.Exportacao": "Projeto-SiStockler.Exportacao",
+    "SiStockler.ControleEmbalagem": "SiStockler · ControleEmbalagem",
+    "SiStockler.CoffeePurchase": "SiStockler.CoffeePurchase",
+    "SiStockler.Serasa": "SiStockler · Serasa",
+    "SiStockler.ServiceDesk": "SiStockler · ServiceDesk",
+    "SiStockler.HanaIntegrator": "SiStockler · HanaIntegrator",
+    "Sistockler.EntregaMI": "SiStockler · EntregaMI",
+    "Sistockler.VendasMI": "SiStockler · VendasMI",
+    "SiStocklerStockServiceOrder": "SiStockler · StockServiceOrder",
+    "SiStocklerStockTransfer": "SiStockler · StockTransfer",
+    "ai-brain-engine-v5": "ai-brain-engine-v5",
+    "ai-brain-engine-v6": "ai-brain-engine-v6",
+    "bot-email": "bot-email",
+    "aura": "aura"
+  }
+}

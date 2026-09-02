@@ -25,14 +25,15 @@ import os
 import re
 import subprocess
 import sys
-from datetime import date, datetime
+from datetime import datetime
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import regras as regras_mod  # noqa: E402
 
 TETO_TOTAL = 6000
 TETO_INDICE = 4000  # a nota do projeto é a peça de maior sinal: come primeiro
-TOP_N_REGRAS = 12
-MIN_CONFIANCA = 0.5
-DECAIMENTO_POR_SEMANA = 0.02
+TOP_N_REGRAS = 12  # confiança, decaimento e escopo vivem em hooks/regras.py
 
 PREAMBULO = (
     "CONTEXTO DO PROJETO (injetado pelo ai-brain-engine-v6) — "
@@ -123,102 +124,6 @@ def _ultimos_diarios(pasta: Path, quantos: int = 3) -> list[Path]:
     return []
 
 
-def _desaspar(valor: str) -> str:
-    """Tira aspas de escalar YAML citado — e só nesse caso.
-
-    `strip("\\"'")` comeria a aspa final de uma frase que TERMINA com citação
-    (`... e se lê como "o sistema não fez nada"`), mutilando a regra. Só remove
-    quando as duas pontas são a mesma aspa e ela envolve o valor todo.
-    """
-    if len(valor) >= 2 and valor[0] == valor[-1] and valor[0] in "\"'":
-        return valor[1:-1].strip()
-    return valor
-
-
-def _primeiro_paragrafo(corpo: str, teto: int = 220) -> str:
-    """Primeiro parágrafo de prosa do corpo, juntado e cortado em fim de frase."""
-    linhas: list[str] = []
-    for linha in corpo.strip().splitlines():
-        nua = linha.strip()
-        if not nua or nua.startswith(("#", ">", "```", "|", "---")):
-            if linhas:
-                break
-            continue
-        linhas.append(nua.lstrip("-*").strip() if nua.startswith(("- ", "* ")) else nua)
-    texto = " ".join(linhas).strip()
-    if len(texto) <= teto:
-        return texto
-    corte = max(texto.rfind(". ", 0, teto), texto.rfind("! ", 0, teto), texto.rfind("? ", 0, teto))
-    return (texto[:corte + 1] if corte > 60 else texto[:teto].rsplit(" ", 1)[0] + "…").strip()
-
-
-def _regras(chave_projeto: str) -> list[str]:
-    """Manchete das regras vivas aplicáveis, por confiança efetiva.
-
-    Injeta a linha `rule:` do frontmatter — não o corpo. O corpo de uma regra
-    passa de 2 KB; doze corpos estouram qualquer teto. A manchete é a parte
-    acionável, e o arquivo fica a um Read de distância.
-    """
-    dir_regras = RAIZ / "regras"
-    if not dir_regras.is_dir():
-        return []
-    hoje = date.today()
-    achadas: list[tuple[float, str]] = []
-    for arq in dir_regras.glob("*.md"):
-        if arq.stem.startswith("_"):
-            continue
-        try:
-            texto = arq.read_text(encoding="utf-8")
-        except Exception:
-            continue
-        m = re.match(r"^---\s*\n(.*?)\n---", texto, re.S)
-        if not m:
-            continue
-        # Frontmatter com continuação: várias regras têm o `rule:` quebrado em duas
-        # ou três linhas indentadas. Ler só a primeira entrega a manchete cortada
-        # no meio da frase — foi o que o teste do Passo 1 pegou.
-        meta: dict[str, str] = {}
-        chave_atual = ""
-        for linha in m.group(1).splitlines():
-            if linha.startswith((" ", "\t")) and chave_atual:
-                meta[chave_atual] = (meta[chave_atual] + " " + linha.strip()).strip()
-            elif ":" in linha:
-                k, _, v = linha.partition(":")
-                chave_atual = k.strip().lower()
-                meta[chave_atual] = v.strip()
-            else:
-                chave_atual = ""
-        if meta.get("status", "active") != "active":
-            continue
-        escopo = meta.get("projects", "").strip().strip("[]").lower()
-        if escopo not in ("all", "global", "*"):
-            alvos = [p.strip().strip("\"'") for p in escopo.split(",") if p.strip()]
-            if chave_projeto not in alvos:
-                continue
-        try:
-            conf = float(meta.get("confidence", "0.5"))
-        except ValueError:
-            conf = 0.5
-        confirmada = meta.get("last_confirmed", "")
-        try:
-            if confirmada:
-                dias = (hoje - date.fromisoformat(confirmada[:10])).days
-                conf -= max(0, dias) / 7.0 * DECAIMENTO_POR_SEMANA
-        except Exception:
-            pass
-        if conf < MIN_CONFIANCA:
-            continue
-        manchete = _desaspar((meta.get("rule") or "").strip())
-        if not manchete:
-            # Regras antigas (do v5) não têm o campo `rule:`. O plano B é o primeiro
-            # PARÁGRAFO do corpo, junto — pegar uma linha física entrega meia frase,
-            # porque o markdown das regras é quebrado à mão.
-            manchete = _primeiro_paragrafo(texto[m.end():]) or arq.stem.replace("-", " ")
-        achadas.append((conf, manchete))
-    achadas.sort(key=lambda x: x[0], reverse=True)
-    return [f"- {texto}" for _, texto in achadas[:TOP_N_REGRAS]]
-
-
 def _orcamento_memoria(indice: Path | None = None) -> str:
     """Avisa quando o índice da memória automática se aproxima do teto.
 
@@ -227,9 +132,11 @@ def _orcamento_memoria(indice: Path | None = None) -> str:
     disso não é carregado**. Silenciosamente. Um índice que cresceu virou memória
     que desapareceu sem ninguém perceber, e é exatamente o tipo de falha que este
     motor existe para tornar visível.
+
+    O parâmetro existe para o teste poder exercitar os DOIS lados.
     """
     try:
-        if indice is None:  # o parâmetro existe para o teste poder exercitar os DOIS lados
+        if indice is None:
             cfg = json.loads((Path.home() / ".claude" / "settings.json").read_text(encoding="utf-8"))
             pasta = cfg.get("autoMemoryDirectory")
             if not pasta:
@@ -282,7 +189,7 @@ def main() -> int:
     # falta espaço, descarta-se regra INTEIRA, da menor confiança para cima, e
     # diz-se quantas ficaram de fora. A nota do projeto e o aviso de orçamento
     # nunca são sacrificados: aquilo o modelo não tem como buscar sozinho.
-    regras = _regras(repo.lower())
+    regras = regras_mod.manchetes(repo.lower(), TOP_N_REGRAS)
     cabecalho_regras = "## Regras aprendidas de falhas reais (valem agora, não são histórico)"
     base = "\n\n".join(partes)
     mostradas = list(regras)

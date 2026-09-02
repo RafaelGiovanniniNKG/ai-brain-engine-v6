@@ -1,12 +1,13 @@
 {
-  "description": "ai-brain-engine-v6 — injeção no início, sensores por edição e o portão que nega encerramento sem prova",
+  "description": "ai-brain-engine-v6 — injeção no início, guarda de commit, sensores por edição, o portão do encerramento e o diário automático",
+  "_comentario": "Comando em STRING, com o caminho entre aspas. A forma de lista (exec) é documentada como mais segura para caminho com espaço, mas o PreToolUse a RECUSA — 'expected string, received array' — e um PreToolUse inválido derruba o carregamento do plugin inteiro, em silêncio para quem só testa os scripts na mão. Verifique com `claude plugin list` depois de mexer aqui.",
   "hooks": {
     "SessionStart": [
       {
         "hooks": [
           {
             "type": "command",
-            "command": ["python", "${CLAUDE_PLUGIN_ROOT}/hooks/session_start.py"],
+            "command": "python \"${CLAUDE_PLUGIN_ROOT}/hooks/session_start.py\"",
             "timeout": 10000,
             "statusMessage": "carregando o contexto do projeto"
           }
@@ -18,7 +19,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": ["python", "${CLAUDE_PLUGIN_ROOT}/hooks/instructions_probe.py"],
+            "command": "python \"${CLAUDE_PLUGIN_ROOT}/hooks/instructions_probe.py\"",
             "timeout": 5000,
             "async": true
           }
@@ -30,7 +31,19 @@
         "hooks": [
           {
             "type": "command",
-            "command": ["python", "${CLAUDE_PLUGIN_ROOT}/hooks/user_prompt.py"],
+            "command": "python \"${CLAUDE_PLUGIN_ROOT}/hooks/user_prompt.py\"",
+            "timeout": 5000
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Bash|PowerShell",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python \"${CLAUDE_PLUGIN_ROOT}/hooks/guarda_commit.py\"",
             "timeout": 5000
           }
         ]
@@ -42,7 +55,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": ["python", "${CLAUDE_PLUGIN_ROOT}/hooks/post_edit.py"],
+            "command": "python \"${CLAUDE_PLUGIN_ROOT}/hooks/post_edit.py\"",
             "timeout": 30000,
             "statusMessage": "medindo o arquivo editado"
           }
@@ -53,7 +66,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": ["python", "${CLAUDE_PLUGIN_ROOT}/hooks/post_bash.py"],
+            "command": "python \"${CLAUDE_PLUGIN_ROOT}/hooks/post_bash.py\"",
             "timeout": 8000
           }
         ]
@@ -64,13 +77,13 @@
         "hooks": [
           {
             "type": "command",
-            "command": ["python", "${CLAUDE_PLUGIN_ROOT}/hooks/stop_gate.py"],
+            "command": "python \"${CLAUDE_PLUGIN_ROOT}/hooks/stop_gate.py\"",
             "timeout": 10000,
             "statusMessage": "conferindo se há prova do que foi feito"
           },
           {
             "type": "command",
-            "command": ["python", "${CLAUDE_PLUGIN_ROOT}/hooks/gatilho_diario.py"],
+            "command": "python \"${CLAUDE_PLUGIN_ROOT}/hooks/gatilho_diario.py\"",
             "timeout": 8000
           }
         ]
@@ -81,7 +94,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": ["python", "${CLAUDE_PLUGIN_ROOT}/hooks/gatilho_diario.py"],
+            "command": "python \"${CLAUDE_PLUGIN_ROOT}/hooks/gatilho_diario.py\"",
             "timeout": 8000
           }
         ]
@@ -92,7 +105,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": ["python", "${CLAUDE_PLUGIN_ROOT}/hooks/gatilho_diario.py"],
+            "command": "python \"${CLAUDE_PLUGIN_ROOT}/hooks/gatilho_diario.py\"",
             "timeout": 30000
           }
         ]

@@ -1,0 +1,179 @@
+{
+  "version": 1,
+  "createdAt": "2026-09-02T12:54:38.8577023+00:00",
+  "updatedAt": "2026-09-02T12:54:38.8607132+00:00",
+  "description": "Initial baseline created by 'slopwatch init' on 2026-09-02 12:54:38 UTC",
+  "entries": [
+    {
+      "hash": "a5bfe648cf8aad3f",
+      "ruleId": "SW005",
+      "filePath": "Directory.Build.props",
+      "lineNumber": 13,
+      "codeSnippet": "<NoWarn>$(NoWarn);SYSLIB1045</NoWarn>",
+      "message": "Adding warnings to NoWarn: SYSLIB1045",
+      "baselinedAt": "2026-09-02T12:54:38.8605169+00:00"
+    },
+    {
+      "hash": "c2b37e6bfd166117",
+      "ruleId": "SW005",
+      "filePath": "Directory.Build.props",
+      "lineNumber": 41,
+      "codeSnippet": "<TreatWarningsAsErrors>false</TreatWarningsAsErrors>",
+      "message": "TreatWarningsAsErrors is disabled - warnings will not fail the build",
+      "baselinedAt": "2026-09-02T12:54:38.860622+00:00"
+    },
+    {
+      "hash": "314a10628df7e4c1",
+      "ruleId": "SW005",
+      "filePath": "src/CqrsReference.Api/CqrsReference.Api.csproj",
+      "lineNumber": 7,
+      "codeSnippet": "<NoWarn>$(NoWarn);CS1591</NoWarn>",
+      "message": "Adding warnings to NoWarn: CS1591",
+      "baselinedAt": "2026-09-02T12:54:38.8606272+00:00"
+    },
+    {
+      "hash": "857c4332977e4060",
+      "ruleId": "SW002",
+      "filePath": "src/CqrsReference.Infrastructure.Messaging.AzureServiceBus/AzureServiceBusHealthProbe.cs",
+      "lineNumber": 28,
+      "codeSnippet": "SuppressMessage(\n        \"Design\",\n        \"CA1031:Do not catch general exception types\",\n        Justification =\n            \"Sonda de saude: qualquer falha significa 'nao saudavel', e deixar a excecao subir \"\n            + \"derrubaria o endpoint de readiness inteiro em vez de reportar a dependencia que caiu.\")",
+      "message": "SuppressMessage attribute suppressing Design:CA1031:Do not catch general exception types",
+      "baselinedAt": "2026-09-02T12:54:38.8606504+00:00"
+    },
+    {
+      "hash": "7adc27fac1af5a76",
+      "ruleId": "SW003",
+      "filePath": "src/CqrsReference.Infrastructure.Messaging.AzureServiceBus/AzureServiceBusQuarantine.cs",
+      "lineNumber": 95,
+      "codeSnippet": "catch (InvalidOperationException)\n            {\n                // Mensagem malformada na quarentena e exatamente o que se espera achar ali;\n                // nao poder converte-la nao deve interromper a leitura das outras.\n            }",
+      "message": "Empty catch block swallows exceptions without handling",
+      "baselinedAt": "2026-09-02T12:54:38.8606577+00:00"
+    },
+    {
+      "hash": "ed3ae56bc179a6fb",
+      "ruleId": "SW003",
+      "filePath": "src/CqrsReference.Infrastructure.Messaging.InMemory/InMemoryMessageBus.cs",
+      "lineNumber": 172,
+      "codeSnippet": "catch (OperationCanceledException)\n            {\n                // Encerramento normal.\n            }",
+      "message": "Empty catch block swallows exceptions without handling",
+      "baselinedAt": "2026-09-02T12:54:38.8606619+00:00"
+    },
+    {
+      "hash": "5e26cf852d997d58",
+      "ruleId": "SW003",
+      "filePath": "src/CqrsReference.Infrastructure.Messaging.InMemory/InMemoryMessageBus.cs",
+      "lineNumber": 191,
+      "codeSnippet": "catch (OperationCanceledException)\n                    {\n                        // Encerramento durante a espera: a mensagem se perde, e isto e\n                        // aceitavel PORQUE este transporte nao promete durabilidade.\n                    }",
+      "message": "Empty catch block swallows exceptions without handling",
+      "baselinedAt": "2026-09-02T12:54:38.8606648+00:00"
+    },
+    {
+      "hash": "173614229ec5fe84",
+      "ruleId": "SW002",
+      "filePath": "src/CqrsReference.Infrastructure.Messaging.RabbitMq/RabbitMqHealthProbe.cs",
+      "lineNumber": 35,
+      "codeSnippet": "SuppressMessage(\n        \"Design\",\n        \"CA1031:Do not catch general exception types\",\n        Justification =\n            \"Sonda de saude e um dos poucos lugares onde capturar Exception e o comportamento \" +\n            \"correto: qualquer falha significa 'nao saudavel', e deixar a excecao subir derrubaria \" +\n            \"o endpoint de readiness inteiro em vez de reportar a dependencia que caiu. \" +\n            \"OperationCanceledException e reerguida logo acima para nao mascarar cancelamento.\")",
+      "message": "SuppressMessage attribute suppressing Design:CA1031:Do not catch general exception types",
+      "baselinedAt": "2026-09-02T12:54:38.8606697+00:00"
+    },
+    {
+      "hash": "c299ec5de1f1b699",
+      "ruleId": "SW003",
+      "filePath": "src/CqrsReference.Infrastructure.Messaging.RabbitMq/RabbitMqQuarantine.cs",
+      "lineNumber": 89,
+      "codeSnippet": "catch (InvalidOperationException)\n                {\n                    // Mensagem malformada na quarentena e exatamente o que se espera\n                    // encontrar ali. Nao poder converte-la nao deve interromper a leitura\n                    // das outras.\n    // ...",
+      "message": "Empty catch block swallows exceptions without handling",
+      "baselinedAt": "2026-09-02T12:54:38.8606734+00:00"
+    },
+    {
+      "hash": "2876d520dd0d9a86",
+      "ruleId": "SW003",
+      "filePath": "src/CqrsReference.Worker.OutboxProcessor/OutboxPublisherService.cs",
+      "lineNumber": 191,
+      "codeSnippet": "catch (OperationCanceledException)\n        {\n            // Encerramento pedido durante a espera.\n        }",
+      "message": "Empty catch block swallows exceptions without handling",
+      "baselinedAt": "2026-09-02T12:54:38.8606772+00:00"
+    },
+    {
+      "hash": "afa9767d8fbae395",
+      "ruleId": "SW004",
+      "filePath": "test/CqrsReference.E2ETests/AuthenticatedFlowTests.cs",
+      "lineNumber": 182,
+      "codeSnippet": "Task.Delay(TimeSpan.FromMilliseconds(500), TestContext.Current.CancellationToken)",
+      "message": "Test uses Task.Delay(TimeSpan.FromMilliseconds(500)) which may indicate a timing-dependent test",
+      "baselinedAt": "2026-09-02T12:54:38.8606799+00:00"
+    },
+    {
+      "hash": "b955f907fb4e94f6",
+      "ruleId": "SW004",
+      "filePath": "test/CqrsReference.IntegrationTests/Chaos/FalhaInjetadaTests.cs",
+      "lineNumber": 101,
+      "codeSnippet": "Task.Delay(TimeSpan.FromSeconds(2), TestContext.Current.CancellationToken)",
+      "message": "Test uses Task.Delay(TimeSpan.FromSeconds(2)) which may indicate a timing-dependent test",
+      "baselinedAt": "2026-09-02T12:54:38.8606944+00:00"
+    },
+    {
+      "hash": "dcfc92ba2fa5bba9",
+      "ruleId": "SW004",
+      "filePath": "test/CqrsReference.IntegrationTests/Chaos/FalhaInjetadaTests.cs",
+      "lineNumber": 129,
+      "codeSnippet": "Task.Delay(TimeSpan.FromSeconds(3), TestContext.Current.CancellationToken)",
+      "message": "Test uses Task.Delay(TimeSpan.FromSeconds(3)) which may indicate a timing-dependent test",
+      "baselinedAt": "2026-09-02T12:54:38.8606971+00:00"
+    },
+    {
+      "hash": "36da53bf97341b59",
+      "ruleId": "SW004",
+      "filePath": "test/CqrsReference.IntegrationTests/Chaos/FalhaInjetadaTests.cs",
+      "lineNumber": 308,
+      "codeSnippet": "Task.Delay(TimeSpan.FromMilliseconds(500))",
+      "message": "Test uses Task.Delay(TimeSpan.FromMilliseconds(500)) which may indicate a timing-dependent test",
+      "baselinedAt": "2026-09-02T12:54:38.8607012+00:00"
+    },
+    {
+      "hash": "b350cf625362a0bf",
+      "ruleId": "SW004",
+      "filePath": "test/CqrsReference.IntegrationTests/Messaging/MessagingContractTests.cs",
+      "lineNumber": 190,
+      "codeSnippet": "Task.Delay(TimeSpan.FromSeconds(3), TestContext.Current.CancellationToken)",
+      "message": "Test uses Task.Delay(TimeSpan.FromSeconds(3)) which may indicate a timing-dependent test",
+      "baselinedAt": "2026-09-02T12:54:38.8607039+00:00"
+    },
+    {
+      "hash": "29f5c0ed4cb43ba7",
+      "ruleId": "SW004",
+      "filePath": "test/CqrsReference.IntegrationTests/Messaging/MessagingContractTests.cs",
+      "lineNumber": 211,
+      "codeSnippet": "Task.Delay(TimeSpan.FromSeconds(8), TestContext.Current.CancellationToken)",
+      "message": "Test uses Task.Delay(TimeSpan.FromSeconds(8)) which may indicate a timing-dependent test",
+      "baselinedAt": "2026-09-02T12:54:38.860706+00:00"
+    },
+    {
+      "hash": "43e832a7ace1e473",
+      "ruleId": "SW004",
+      "filePath": "test/CqrsReference.IntegrationTests/Messaging/MessagingContractTests.cs",
+      "lineNumber": 365,
+      "codeSnippet": "Task.Delay(IntervaloDaSondagem)",
+      "message": "Test uses Task.Delay(IntervaloDaSondagem) which may indicate a timing-dependent test",
+      "baselinedAt": "2026-09-02T12:54:38.8607085+00:00"
+    },
+    {
+      "hash": "af085d22553dc828",
+      "ruleId": "SW004",
+      "filePath": "test/CqrsReference.IntegrationTests/Messaging/MessagingContractTests.cs",
+      "lineNumber": 417,
+      "codeSnippet": "Task.Delay(TimeSpan.FromMilliseconds(500), TestContext.Current.CancellationToken)",
+      "message": "Test uses Task.Delay(TimeSpan.FromMilliseconds(500)) which may indicate a timing-dependent test",
+      "baselinedAt": "2026-09-02T12:54:38.8607108+00:00"
+    },
+    {
+      "hash": "a22f5d53fd44bdbf",
+      "ruleId": "SW004",
+      "filePath": "test/CqrsReference.IntegrationTests/Messaging/MessagingContractTests.cs",
+      "lineNumber": 427,
+      "codeSnippet": "Task.Delay(limite)",
+      "message": "Test uses Task.Delay(limite) which may indicate a timing-dependent test",
+      "baselinedAt": "2026-09-02T12:54:38.8607131+00:00"
+    }
+  ]
+}

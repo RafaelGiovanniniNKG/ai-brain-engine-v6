@@ -1,0 +1,12 @@
+{
+  "name": "v6-sensores-eslint",
+  "private": true,
+  "description": "ESLint do motor. Mora AQUI, nunca no repo alvo — o flat config resolve os plugins relativo a este arquivo, então `eslint --no-config-lookup -c <caminho absoluto>` roda contra qualquer projeto sem instalar nada nele.",
+  "type": "module",
+  "devDependencies": {
+    "eslint": "10.9.1",
+    "eslint-plugin-jasmine": "4.2.2",
+    "eslint-plugin-no-only-tests": "3.4.0",
+    "typescript-eslint": "8.69.0"
+  }
+}

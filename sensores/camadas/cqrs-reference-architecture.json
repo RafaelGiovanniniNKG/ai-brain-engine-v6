@@ -1,0 +1,32 @@
+{
+  "_comentario": "Matriz de dependência da POC de referência CQRS. Medida do grafo real em 02/09/2026 — todas as regras abaixo PASSAM no estado atual do repo, de propósito: regra que já nasce vermelha não é regra, é ruído.",
+  "repo": "cqrs-reference-architecture",
+  "regras": [
+    {
+      "de": "CqrsReference.Domain",
+      "proibido": ["*"],
+      "porque": "o Domínio não depende de nada — nem da Aplicação"
+    },
+    {
+      "de": "CqrsReference.Application",
+      "proibido": ["CqrsReference.Infrastructure*", "CqrsReference.Api*", "CqrsReference.Worker*"],
+      "porque": "a Aplicação só conhece o Domínio; infraestrutura entra por abstração"
+    },
+    {
+      "de": "CqrsReference.Infrastructure*",
+      "proibido": ["CqrsReference.Api*", "CqrsReference.Worker*"],
+      "porque": "infraestrutura não conhece quem a hospeda"
+    },
+    {
+      "de": "CqrsReference.Worker.*",
+      "proibido": ["CqrsReference.Api", "CqrsReference.Worker.*"],
+      "excecao": ["CqrsReference.Worker.Audit"],
+      "porque": "worker não depende da API nem de outro worker"
+    },
+    {
+      "de": "CqrsReference.Domain.Tests",
+      "proibido": ["CqrsReference.Infrastructure*", "CqrsReference.Api*", "CqrsReference.Worker*"],
+      "porque": "teste de domínio que precisa de infraestrutura não é teste de domínio"
+    }
+  ]
+}

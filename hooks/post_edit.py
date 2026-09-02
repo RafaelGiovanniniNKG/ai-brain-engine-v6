@@ -33,6 +33,9 @@ import subprocess
 import sys
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import estado  # noqa: E402
+
 RAIZ = Path(__file__).resolve().parent.parent
 TETO_SEG = 25
 
@@ -189,6 +192,11 @@ def main() -> int:
         achados.append(_eslint(arquivo, repo))
 
     texto = "\n\n".join(a for a in achados if a).strip()
+
+    # O registro acontece SEMPRE, com ou sem achado: quem decide o portão é a
+    # existência da edição, não a existência de reprovação.
+    estado.registrar_edicao(d.get("session_id", ""), str(arquivo), str(repo) if repo else None, texto)
+
     if not texto:
         return 0
 

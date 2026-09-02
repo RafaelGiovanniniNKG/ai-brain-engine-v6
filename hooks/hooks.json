@@ -1,5 +1,5 @@
 {
-  "description": "ai-brain-engine-v6 — injeção no início da sessão, prova do que chegou ao modelo e sensores por edição",
+  "description": "ai-brain-engine-v6 — injeção no início, sensores por edição e o portão que nega encerramento sem prova",
   "hooks": {
     "SessionStart": [
       {
@@ -25,6 +25,17 @@
         ]
       }
     ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": ["python", "${CLAUDE_PLUGIN_ROOT}/hooks/user_prompt.py"],
+            "timeout": 5000
+          }
+        ]
+      }
+    ],
     "PostToolUse": [
       {
         "matcher": "Write|Edit|MultiEdit|NotebookEdit",
@@ -34,6 +45,28 @@
             "command": ["python", "${CLAUDE_PLUGIN_ROOT}/hooks/post_edit.py"],
             "timeout": 30000,
             "statusMessage": "medindo o arquivo editado"
+          }
+        ]
+      },
+      {
+        "matcher": "Bash|PowerShell",
+        "hooks": [
+          {
+            "type": "command",
+            "command": ["python", "${CLAUDE_PLUGIN_ROOT}/hooks/post_bash.py"],
+            "timeout": 8000
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": ["python", "${CLAUDE_PLUGIN_ROOT}/hooks/stop_gate.py"],
+            "timeout": 10000,
+            "statusMessage": "conferindo se há prova do que foi feito"
           }
         ]
       }

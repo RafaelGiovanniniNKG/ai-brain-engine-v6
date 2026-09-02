@@ -29,7 +29,7 @@ from datetime import date, datetime
 from pathlib import Path
 
 TETO_TOTAL = 6000
-TETO_INDICE = 3200
+TETO_INDICE = 4000  # a nota do projeto é a peça de maior sinal: come primeiro
 TOP_N_REGRAS = 12
 MIN_CONFIANCA = 0.5
 DECAIMENTO_POR_SEMANA = 0.02
@@ -219,6 +219,35 @@ def _regras(chave_projeto: str) -> list[str]:
     return [f"- {texto}" for _, texto in achadas[:TOP_N_REGRAS]]
 
 
+def _orcamento_memoria(indice: Path | None = None) -> str:
+    """Avisa quando o índice da memória automática se aproxima do teto.
+
+    A regra oficial: as primeiras 200 linhas do índice, ou os primeiros 25 KB, o
+    que vier primeiro, são carregados no início de toda conversa — **e o que passa
+    disso não é carregado**. Silenciosamente. Um índice que cresceu virou memória
+    que desapareceu sem ninguém perceber, e é exatamente o tipo de falha que este
+    motor existe para tornar visível.
+    """
+    try:
+        if indice is None:  # o parâmetro existe para o teste poder exercitar os DOIS lados
+            cfg = json.loads((Path.home() / ".claude" / "settings.json").read_text(encoding="utf-8"))
+            pasta = cfg.get("autoMemoryDirectory")
+            if not pasta:
+                return ""
+            indice = Path(pasta.replace("~", str(Path.home()))) / "MEMORY.md"
+        texto = Path(indice).read_text(encoding="utf-8")
+    except Exception:
+        return ""
+    linhas, bytes_ = len(texto.splitlines()), len(texto.encode("utf-8"))
+    if linhas < 160 and bytes_ < 20480:
+        return ""
+    return (
+        f"⚠ ORÇAMENTO DA MEMÓRIA: o índice está em {linhas}/200 linhas e "
+        f"{bytes_}/25600 bytes. O que passar do teto **deixa de ser carregado, sem aviso**. "
+        "Hora de curar o índice (skill `v6-curar`)."
+    )
+
+
 def main() -> int:
     entrada = _ler_entrada()
     motivo = entrada.get("start_reason") or entrada.get("reason") or "startup"
@@ -243,16 +272,33 @@ def main() -> int:
             partes.append(f"## Registros recentes (leia o arquivo se precisar do detalhe)\n{listados}")
         partes.append(f"Documentação deste projeto: {pasta} — pode ler qualquer nota daí.")
 
-    regras = _regras(repo.lower())
-    if regras:
-        partes.append(
-            "## Regras aprendidas de falhas reais (valem agora, não são histórico)\n"
-            + "\n".join(regras)
-        )
+    aviso = _orcamento_memoria()
+    if aviso:
+        partes.insert(1, aviso)  # logo depois do preâmbulo: é o que não pode passar batido
 
-    bloco = "\n\n".join(partes)
-    if len(bloco) > TETO_TOTAL:
-        bloco = bloco[:TETO_TOTAL].rsplit("\n", 1)[0] + "\n[…] (bloco truncado no teto de injeção)"
+    # As regras entram por ÚLTIMO e cabem no que sobrou. Corte cego no fim do
+    # bloco parte a última regra no meio da frase, e meia regra é pior que
+    # nenhuma — o modelo obedece uma instrução que ninguém escreveu. Então se
+    # falta espaço, descarta-se regra INTEIRA, da menor confiança para cima, e
+    # diz-se quantas ficaram de fora. A nota do projeto e o aviso de orçamento
+    # nunca são sacrificados: aquilo o modelo não tem como buscar sozinho.
+    regras = _regras(repo.lower())
+    cabecalho_regras = "## Regras aprendidas de falhas reais (valem agora, não são histórico)"
+    base = "\n\n".join(partes)
+    mostradas = list(regras)
+    while mostradas:
+        rodape = (
+            f"\n(+{len(regras) - len(mostradas)} regra(s) de menor confiança não listadas — "
+            f"estão em `ai-brain-engine-v6/regras/`)" if len(mostradas) < len(regras) else ""
+        )
+        tentativa = base + "\n\n" + cabecalho_regras + "\n" + "\n".join(mostradas) + rodape
+        if len(tentativa) <= TETO_TOTAL:
+            base = tentativa
+            break
+        mostradas.pop()
+    bloco = base
+    if len(bloco) > TETO_TOTAL:  # nem sem regra nenhuma cabe: sobra cortar a nota
+        bloco = bloco[:TETO_TOTAL].rsplit("\n", 1)[0] + "\n[…] (nota do projeto truncada — leia o arquivo)"
 
     sys.stdout.reconfigure(encoding="utf-8")
     print(json.dumps(

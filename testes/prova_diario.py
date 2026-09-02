@@ -113,6 +113,31 @@ ruins = {k: (vault.slug(k), esperado) for k, esperado in casos.items() if vault.
 mostra("dois-pontos, barra, curinga, nome reservado e vazio tratados", not ruins,
        json.dumps(ruins, ensure_ascii=False) if ruins else "todos os casos como esperado")
 
+print("\n8) plano B do YAML: máquina nova, sem pyyaml instalado")
+guardado = vault.yaml
+try:
+    vault.yaml = None   # simula a máquina que não tem pyyaml
+    fm = vault.frontmatter({"titulo": "Onda 8: migração — Grupo B", "destilado": True,
+                            "sessoes": 3, "obs": "valor com # e: dois-pontos"})
+    meta, _ = vault.partir(fm + "\ncorpo")
+    ok = (meta.get("titulo") == "Onda 8: migração — Grupo B" and meta.get("destilado") is True
+          and str(meta.get("sessoes")) == "3" and "dois-pontos" in str(meta.get("obs")))
+    mostra("frontmatter sem pyyaml sobrevive a `:`, acento e `#`", ok,
+           fm.replace(chr(10), " | "))
+finally:
+    vault.yaml = guardado
+
+print("\n9) o diagnóstico da máquina roda e responde")
+import subprocess
+d = subprocess.run([sys.executable, str(RAIZ / "hooks" / "doutor.py"), "--json"],
+                   capture_output=True, text=True, encoding="utf-8", timeout=180)
+try:
+    itens = json.loads(d.stdout or "[]")
+except Exception:
+    itens = []
+mostra("doutor.py lista os itens da máquina", len(itens) >= 8,
+       f"{len(itens)} itens, {sum(1 for i in itens if not i['ok'])} faltando")
+
 estado.gravar(SESSAO, {})
 shutil.rmtree(COFRE, ignore_errors=True)
 print("\n" + "=" * 70)

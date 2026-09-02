@@ -30,6 +30,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import regras as regras_mod  # noqa: E402
+import vault as vault_mod  # noqa: E402
 
 TETO_TOTAL = 6000
 TETO_INDICE = 4000  # a nota do projeto é a peça de maior sinal: come primeiro
@@ -68,34 +69,6 @@ def _repo_de(cwd: str) -> tuple[str, Path]:
     except Exception:
         pass
     return p.name, p
-
-
-def _config() -> dict:
-    try:
-        return json.loads((RAIZ / "mapa.json").read_text(encoding="utf-8"))
-    except Exception:
-        return {}
-
-
-def _pasta_no_vault(repo: str, cfg: dict) -> Path | None:
-    vault = cfg.get("vault")
-    if not vault:
-        return None
-    base = Path(vault) / cfg.get("projetos", "Projetos")
-    nome = (cfg.get("mapa") or {}).get(repo)
-    if nome and (base / nome).is_dir():
-        return base / nome
-    # sem entrada no mapa: tenta casar por nome, ignorando pontuação
-    alvo = re.sub(r"[^a-z0-9]", "", repo.lower())
-    if not alvo:
-        return None
-    try:
-        for d in base.iterdir():
-            if d.is_dir() and alvo in re.sub(r"[^a-z0-9]", "", d.name.lower()):
-                return d
-    except Exception:
-        pass
-    return None
 
 
 def _nota_indice(pasta: Path) -> tuple[str, Path] | None:
@@ -155,6 +128,36 @@ def _orcamento_memoria(indice: Path | None = None) -> str:
     )
 
 
+def _sensores_faltando() -> str:
+    """Diz quais sensores não estão instalados NESTA máquina.
+
+    Só as checagens baratas (existe o binário? existe a pasta?) — menos de 50 ms,
+    porque isto roda antes de toda sessão. O diagnóstico completo é
+    `python hooks/doutor.py`.
+
+    Existe porque sensor ausente é a pior falha possível deste motor: ele não
+    grita, ele simplesmente não acha nada — e "não achou nada" se lê como "está
+    tudo bem". Numa máquina nova, sem isto, o motor pareceria funcionando.
+    """
+    import shutil
+    faltas: list[str] = []
+    if not (shutil.which("slopwatch") or (Path.home() / ".dotnet" / "tools" / "slopwatch.exe").is_file()):
+        faltas.append("slopwatch (teste desligado, aviso silenciado, catch vazio em .cs)")
+    if not (RAIZ / "sensores" / "eslint" / "node_modules" / "eslint" / "bin" / "eslint.js").is_file():
+        faltas.append("eslint do motor (fronteira de módulo e trapaça em .ts)")
+    if not (shutil.which("csharp-ls") or (Path.home() / ".dotnet" / "tools" / "csharp-ls.exe").is_file()):
+        faltas.append("csharp-ls (erro do compilador aparecendo sozinho)")
+    if not faltas:
+        return ""
+    return (
+        "⚠ SENSOR AUSENTE nesta máquina — o motor está medindo MENOS do que deveria, "
+        "e sensor que não roda não acusa nada:\n"
+        + "\n".join(f"- {f}" for f in faltas)
+        + "\nConserto: `powershell -File <motor>/instalar.ps1`. "
+        "Diga isso ao Rafael antes de afirmar que algo está verificado."
+    )
+
+
 def main() -> int:
     entrada = _ler_entrada()
     motivo = entrada.get("start_reason") or entrada.get("reason") or "startup"
@@ -162,10 +165,9 @@ def main() -> int:
         return 0  # o contexto já está na conversa retomada
 
     repo, _raiz_repo = _repo_de(entrada.get("cwd", ""))
-    cfg = _config()
     partes: list[str] = [PREAMBULO, f"Projeto: {repo}"]
 
-    pasta = _pasta_no_vault(repo, cfg)
+    pasta = vault_mod.pasta_no_vault(repo)
     if pasta:
         nota = _nota_indice(pasta)
         if nota:
@@ -182,6 +184,10 @@ def main() -> int:
     aviso = _orcamento_memoria()
     if aviso:
         partes.insert(1, aviso)  # logo depois do preâmbulo: é o que não pode passar batido
+
+    faltando = _sensores_faltando()
+    if faltando:
+        partes.insert(1, faltando)
 
     # As regras entram por ÚLTIMO e cabem no que sobrou. Corte cego no fim do
     # bloco parte a última regra no meio da frase, e meia regra é pior que

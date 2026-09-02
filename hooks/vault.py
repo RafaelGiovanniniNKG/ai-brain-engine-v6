@@ -29,7 +29,10 @@ import re
 import unicodedata
 from pathlib import Path
 
-import yaml
+try:
+    import yaml
+except ImportError:  # máquina nova sem pip install: o motor não pode parar por isso
+    yaml = None
 
 RAIZ = Path(__file__).resolve().parent.parent
 
@@ -48,6 +51,15 @@ def config() -> dict:
         cfg = json.loads((RAIZ / "mapa.json").read_text(encoding="utf-8"))
     except Exception:
         cfg = {}
+    # local.json guarda o que é DESTA máquina e não vai para o git — é o que
+    # permite o mesmo repo do motor funcionar em duas máquinas com o vault em
+    # caminhos diferentes, sem editar arquivo versionado.
+    try:
+        local = json.loads((RAIZ / "local.json").read_text(encoding="utf-8"))
+        if local.get("vault"):
+            cfg["vault"] = local["vault"]
+    except Exception:
+        pass
     if os.environ.get("V6_VAULT"):
         cfg["vault"] = os.environ["V6_VAULT"]
     return cfg
@@ -83,14 +95,41 @@ def slug(texto: str, teto: int = 60) -> str:
     return limpo
 
 
+def _dump_simples(dados: dict) -> str:
+    """Plano B de serialização quando não há pyyaml na máquina.
+
+    Cita TODO valor de texto. É mais feio que o pyyaml e é de propósito: o risco
+    aqui não é estética, é frontmatter inválido — valor com `:` (os títulos daqui
+    têm `Onda 8:`), com `#`, ou um `yes`/`null` solto virando booleano. Citando
+    tudo, nada disso acontece.
+    """
+    linhas = []
+    for k in sorted(dados):
+        v = dados[k]
+        if isinstance(v, bool):
+            linhas.append(f"{k}: {'true' if v else 'false'}")
+        elif isinstance(v, (int, float)):
+            linhas.append(f"{k}: {v}")
+        elif isinstance(v, (list, tuple)):
+            linhas.append(f"{k}:")
+            linhas += [f"  - \"{str(i).replace(chr(92), chr(92) * 2).replace(chr(34), chr(92) + chr(34))}\"" for i in v]
+        else:
+            s = str(v).replace(chr(92), chr(92) * 2).replace(chr(34), chr(92) + chr(34)).replace("\n", " ")
+            linhas.append(f'{k}: "{s}"')
+    return "\n".join(linhas) + "\n"
+
+
 def frontmatter(dados: dict) -> str:
     """YAML plano, valores citados, chaves ordenadas — por serializador."""
     achatado = {}
     for k, v in dados.items():
-        if isinstance(v, (dict, list, tuple, set)):
-            v = json.dumps(v, ensure_ascii=False) if not isinstance(v, (list, tuple)) else list(v)
+        if isinstance(v, (dict, set)):
+            v = json.dumps(v, ensure_ascii=False)
         achatado[str(k)] = v
-    corpo = yaml.safe_dump(achatado, allow_unicode=True, default_flow_style=False, sort_keys=True)
+    if yaml is not None:
+        corpo = yaml.safe_dump(achatado, allow_unicode=True, default_flow_style=False, sort_keys=True)
+    else:
+        corpo = _dump_simples(achatado)
     return f"---\n{corpo}---\n"
 
 
@@ -135,8 +174,20 @@ def partir(texto: str) -> tuple[dict, str]:
     m = re.match(r"^---\s*\n(.*?)\n---\s*\n?", texto, re.S)
     if not m:
         return {}, texto
-    try:
-        meta = yaml.safe_load(m.group(1)) or {}
-    except Exception:
+    if yaml is not None:
+        try:
+            meta = yaml.safe_load(m.group(1)) or {}
+        except Exception:
+            meta = {}
+    else:
+        # plano B: `chave: valor` numa linha, aspas removidas, sem aninhamento.
+        # Perde estrutura complexa — e a nota do diário não tem nenhuma.
         meta = {}
+        for linha in m.group(1).splitlines():
+            if ":" in linha and not linha.startswith((" ", "\t", "-")):
+                k, _, v = linha.partition(":")
+                bruto = v.strip()
+                if len(bruto) >= 2 and bruto[0] == bruto[-1] and bruto[0] in "\"'":
+                    bruto = bruto[1:-1]
+                meta[k.strip()] = {"true": True, "false": False}.get(bruto.lower(), bruto)
     return (meta if isinstance(meta, dict) else {}), texto[m.end():]

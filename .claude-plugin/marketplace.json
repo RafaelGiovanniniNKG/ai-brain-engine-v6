@@ -1,0 +1,18 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "ai-brain-engine-v6",
+  "description": "Marketplace de uma peça só: o motor pessoal do Rafael, instalado de pasta local.",
+  "owner": {
+    "name": "Rafael Giovannini"
+  },
+  "plugins": [
+    {
+      "name": "ai-brain-engine-v6",
+      "source": "./",
+      "description": "Injeta o contexto do projeto no início da sessão, mede a stack de verdade (.NET e Angular), barra 'pronto' sem prova e documenta no vault sozinho. Zero arquivos nos repositórios de trabalho.",
+      "author": {
+        "name": "Rafael Giovannini"
+      }
+    }
+  ]
+}

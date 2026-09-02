@@ -41,6 +41,12 @@ def main() -> int:
     texto = (d.get("prompt") or d.get("user_prompt") or "")
     if not isinstance(texto, str) or not texto.strip():
         return 0
+
+    # O pedido entra no registro — é a espinha do diário do Passo 4. Sem ele o
+    # diário conta o que mudou e não o que foi pedido, e quem lê depois não
+    # entende o porquê.
+    estado.registrar_prompt(d.get("session_id", ""), texto, d.get("cwd", ""))
+
     for padrao in ESCAPES:
         m = re.search(padrao, texto, re.I)
         if m:

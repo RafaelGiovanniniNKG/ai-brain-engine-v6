@@ -76,12 +76,54 @@ def registrar_edicao(sessao: str, arquivo: str, repo: str | None, reprovou: str 
     gravar(sessao, d)
 
 
-def registrar_execucao(sessao: str, comando: str, tipo: str, ok: bool | None) -> None:
-    """Um `dotnet test`, `ng test`, `dotnet build`… com o veredito, quando dá para provar."""
+def registrar_execucao(sessao: str, comando: str, tipo: str, ok: bool | None,
+                       evidencia: str = "") -> None:
+    """Um `dotnet test`, `ng test`, `dotnet build`… com o veredito e a linha do placar.
+
+    A evidência é obrigatória por princípio: registrar "passou" é afirmação;
+    registrar "Failed: 0, Passed: 319" é prova."""
     d = ler(sessao)
-    d[f"ultimo_{tipo}"] = {"ts": time.time(), "comando": comando[:300], "ok": ok}
+    d[f"ultimo_{tipo}"] = {"ts": time.time(), "comando": comando[:300], "ok": ok,
+                           "evidencia": (evidencia or "")[:200]}
     gravar(sessao, d)
 
 
 def liberar(sessao: str, motivo: str) -> None:
     anotar(sessao, escape={"ts": time.time(), "motivo": motivo[:200]})
+
+
+def registrar_prompt(sessao: str, texto: str, cwd: str = "") -> None:
+    """O que o Rafael pediu. É a espinha do diário: sem isso o registro conta o
+    que MUDOU e não o que foi PEDIDO, e quem lê depois não entende o porquê."""
+    d = ler(sessao)
+    pedidos = d.get("pedidos") or []
+    pedidos.append({"ts": time.time(), "texto": (texto or "").strip()[:400]})
+    d["pedidos"] = pedidos[-40:]
+    if cwd and not d.get("cwd"):
+        d["cwd"] = cwd
+    if not d.get("inicio"):
+        d["inicio"] = time.time()
+    gravar(sessao, d)
+
+
+def registrar_commit(sessao: str, sha: str, mensagem: str, repo: str = "") -> None:
+    """Commit é a verdade que a conversa não pode falsear."""
+    d = ler(sessao)
+    commits = d.get("commits") or []
+    if not any(c.get("sha") == sha for c in commits):
+        commits.append({"ts": time.time(), "sha": sha, "mensagem": mensagem[:200], "repo": repo})
+    d["commits"] = commits[-30:]
+    gravar(sessao, d)
+
+
+def assinatura(d: dict) -> str:
+    """Impressão digital do que já é conhecido. Igual = nada novo para escrever."""
+    import hashlib
+    partes = [
+        str(len(d.get("pedidos") or [])),
+        str(len(d.get("arquivos_tocados") or [])),
+        str(len(d.get("commits") or [])),
+        json.dumps(d.get("ultimo_teste") or {}, sort_keys=True),
+        json.dumps(d.get("ultima_edicao") or {}, sort_keys=True),
+    ]
+    return hashlib.sha256("|".join(partes).encode("utf-8")).hexdigest()[:16]

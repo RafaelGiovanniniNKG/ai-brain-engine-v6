@@ -47,6 +47,22 @@ FALHA = (
 FALHA_MAIUSCULA = (r"\bFAILED\b", r"Build FAILED", r"\bFailed!", r"\bERROR\b")
 
 
+def _evidencia(saida: str) -> str:
+    """A linha do placar, guardada palavra por palavra.
+
+    Sem isso o diário registra "o teste passou" — que é exatamente a afirmação
+    sem prova que este motor existe para impedir. Com isso ele registra
+    "Failed: 0, Passed: 319", que é verificável por quem ler depois.
+    """
+    for padrao in (r"^.*Failed:\s*\d+.*$", r"^.*Passed!.*$", r"^.*Test Run.*$",
+                   r"^.*Executed \d+ of \d+.*$", r"^.*Tests:.*$", r"^.*Build succeeded.*$",
+                   r"^.*Compila[çc][ãa]o.*$"):
+        m = re.search(padrao, saida or "", re.M | re.I)
+        if m:
+            return m.group(0).strip()[:200]
+    return ""
+
+
 def _tipo(cmd: str) -> str | None:
     if any(re.search(p, cmd, re.I) for p in PADROES_TESTE):
         return "teste"
@@ -83,12 +99,23 @@ def main() -> int:
     cmd = ((d.get("tool_input") or {}).get("command") or "")
     if not cmd:
         return 0
+    r = d.get("tool_use_result")
+    saida = r if isinstance(r, str) else json.dumps(r, ensure_ascii=False) if r else ""
+    sessao = d.get("session_id", "")
+
+    # Commit bem-sucedido: a verdade que a conversa não pode falsear. O `git
+    # commit` imprime `[branch sha] mensagem` — é daí que sai o registro, não da
+    # afirmação de que commitou.
+    if re.search(r"\bgit\b.{0,40}\bcommit\b", cmd, re.I | re.S):
+        for sha_m in re.finditer(r"^\[(?:\S+\s+)?(?:\(root-commit\)\s+)?([0-9a-f]{7,40})\]\s*(.*)$",
+                                 saida, re.M):
+            estado.registrar_commit(sessao, sha_m.group(1), sha_m.group(2).strip(),
+                                    str((d.get("cwd") or "")))
+
     tipo = _tipo(cmd)
     if not tipo:
         return 0
-    r = d.get("tool_use_result")
-    saida = r if isinstance(r, str) else json.dumps(r, ensure_ascii=False) if r else ""
-    estado.registrar_execucao(d.get("session_id", ""), cmd, tipo, _veredito(d, saida))
+    estado.registrar_execucao(sessao, cmd, tipo, _veredito(d, saida), _evidencia(saida))
     return 0
 
 

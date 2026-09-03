@@ -12,12 +12,27 @@ Não bloqueia nada e não injeta nada: só anota.
 from __future__ import annotations
 
 import json
+import os
 import re
 import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import estado  # noqa: E402
+
+# Texto que o programa injeta e que NÃO é pedido do Rafael. Sem este filtro, uma
+# notificação de tarefa concluída entrava no diário como se ele a tivesse
+# escrito — foi o que aconteceu no bloco das 08:19 de 03/09, com dois avisos
+# inteiros listados em "Pedidos desta sessão".
+NAO_E_PEDIDO = (
+    "<task-notification>",
+    "<system-reminder>",
+    "<local-command-",
+    "<command-name>",
+    "[SYSTEM NOTIFICATION",
+    "Caveat: The messages below were generated",
+    "Você recebe o registro MEC",   # o prompt do próprio destilador
+)
 
 # Frases de liberação. Deliberadamente explícitas: nada de "ok", "segue",
 # "beleza" — palavra comum viraria escape acidental e o portão sumiria sozinho.
@@ -34,12 +49,19 @@ ESCAPES = (
 
 
 def main() -> int:
+    # Sessão aberta pelo próprio motor (o destilador do diário) não é sessão de
+    # trabalho: ela não pede nada e não deve ser documentada.
+    if os.environ.get("V6_FILHO"):
+        return 0
     try:
         d = json.loads(sys.stdin.read() or "{}")
     except Exception:
         return 0
     texto = (d.get("prompt") or d.get("user_prompt") or "")
     if not isinstance(texto, str) or not texto.strip():
+        return 0
+    inicio = texto.lstrip()[:400]
+    if any(marca in inicio for marca in NAO_E_PEDIDO):
         return 0
 
     # O pedido entra no registro — é a espinha do diário do Passo 4. Sem ele o

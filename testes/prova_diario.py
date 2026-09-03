@@ -138,6 +138,31 @@ except Exception:
 mostra("doutor.py lista os itens da máquina", len(itens) >= 8,
        f"{len(itens)} itens, {sum(1 for i in itens if not i['ok'])} faltando")
 
+print("\n10) o motor não documenta a si mesmo")
+# Um aviso do programa não é pedido do Rafael, e a sessão que o próprio
+# destilador abre não é sessão de trabalho. Os dois entravam no diário: o
+# primeiro como "Pedidos desta sessão", o segundo como um bloco inteiro com o
+# prompt do destilador dentro.
+estado.gravar(SESSAO, {})
+hook("user_prompt.py", {"session_id": SESSAO,
+                        "prompt": "<task-notification>\n<task-id>abc</task-id>\n</task-notification>"})
+hook("user_prompt.py", {"session_id": SESSAO,
+                        "prompt": "Você recebe o registro MECÂNICO de uma sessão de programação"})
+so_avisos = len((estado.ler(SESSAO).get("pedidos") or []))
+mostra("aviso do programa e prompt do destilador NÃO viram pedido", so_avisos == 0,
+       f"pedidos registrados: {so_avisos}")
+
+hook("user_prompt.py", {"session_id": SESSAO, "prompt": "conserta o bug do filtro"},
+     env={"V6_FILHO": "1"})
+com_marca = len((estado.ler(SESSAO).get("pedidos") or []))
+mostra("com a marca de filho, nem pedido de verdade é registrado", com_marca == 0,
+       f"pedidos registrados: {com_marca}")
+
+hook("user_prompt.py", {"session_id": SESSAO, "prompt": "conserta o bug do filtro"})
+mostra("e sem a marca o pedido de verdade continua entrando",
+       len((estado.ler(SESSAO).get("pedidos") or [])) == 1,
+       f"pedidos registrados: {len((estado.ler(SESSAO).get('pedidos') or []))}")
+
 estado.gravar(SESSAO, {})
 shutil.rmtree(COFRE, ignore_errors=True)
 print("\n" + "=" * 70)

@@ -20,6 +20,7 @@ processos e ignorar o timeout — a sessão trava na saída.
 from __future__ import annotations
 
 import json
+import os
 import subprocess
 import sys
 import time
@@ -33,6 +34,11 @@ INTERVALO_STOP_SEG = 600
 
 
 def main() -> int:
+    # A sessão que o destilador abre para resumir NÃO pode disparar outro
+    # destilador: sem esta marca o motor documenta a si mesmo, e num dia ruim
+    # documenta em laço.
+    if os.environ.get("V6_FILHO"):
+        return 0
     try:
         d = json.loads(sys.stdin.read() or "{}")
     except Exception:

@@ -127,10 +127,17 @@ def _destilar_com_modelo(dig: dict, repo_nome: str) -> str:
         f"REGISTRO:\n{entrada}"
     )
     try:
+        # `V6_FILHO` marca a sessão que ESTA chamada abre. Sem a marca, o
+        # `claude -p` é uma sessão de Claude Code como qualquer outra, no mesmo
+        # repositório e com o plugin carregado: ela anotava o próprio prompt do
+        # destilador como se fosse pedido do Rafael e escrevia um bloco só dela
+        # no diário — foi o texto embolado que apareceu no dia 03/09. O motor
+        # não pode ser fonte do que ele mesmo documenta.
         r = subprocess.run(
             ["claude", "-p", "--model", MODELO, prompt],
             capture_output=True, text=True, encoding="utf-8", errors="replace",
             timeout=TETO_MODELO_SEG,
+            env={**os.environ, "V6_FILHO": "1"},
         )
         saida = (r.stdout or "").strip()
         return saida if r.returncode == 0 and len(saida) > 40 else ""

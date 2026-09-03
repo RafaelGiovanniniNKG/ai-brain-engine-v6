@@ -101,6 +101,24 @@ def diagnostico() -> list[dict]:
         (RAIZ / "sensores" / "eslint" / "node_modules" / "eslint" / "bin" / "eslint.js").is_file(),
         False, "cd sensores/eslint && npm install")
 
+    # A pasta de estado EFETIVA, dita em voz alta. Está aqui porque olhar a
+    # pasta errada se lê como "o motor não mediu nada": dentro de um processo de
+    # hook o Claude Code define `CLAUDE_PLUGIN_DATA`, e `estado.pasta()` prefere
+    # essa variável — então numa sessão de verdade o estado mora em
+    # `~\.claude\plugins\data\<id>\ai-brain-engine-v6\`. Rodando na mão (prova,
+    # doutor, diagnóstico) a variável não existe e a pasta é `%LOCALAPPDATA%`.
+    # Duas pastas, e quem diagnostica na mão vê a que o motor não usa.
+    sys.path.insert(0, str(RAIZ / "hooks"))
+    try:
+        import estado as _estado  # noqa: PLC0415
+        pasta_estado = str(_estado.pasta())
+    except Exception:
+        pasta_estado = ""
+    add("pasta de estado (a desta execução)", bool(pasta_estado), True,
+        "o motor não tem onde anotar o que mediu",
+        "CLAUDE_PLUGIN_DATA" if os.environ.get("CLAUDE_PLUGIN_DATA")
+        else "LOCALAPPDATA — sessão real usa OUTRA")
+
     add("vault encontrado", bool(vault) and Path(str(vault)).is_dir(), True,
         "aponte o caminho em local.json (chave \"vault\")", str(vault or "não definido"))
     add("memória automática no vault", bool(cfg.get("autoMemoryDirectory")), False,
@@ -147,6 +165,19 @@ def main() -> int:
             print(f" {marca} {i['item']:<{largura}} {i['detalhe'][:38]}")
             if not i["ok"]:
                 print(f"   {'':<{largura}} conserto: {i['conserto']}")
+        print("=" * (largura + 40))
+        # O caminho inteiro, fora da tabela, porque não cabe na coluna de
+        # detalhe e é justamente o que se precisa saber para conferir na mão.
+        try:
+            sys.path.insert(0, str(RAIZ / "hooks"))
+            import estado as _e  # noqa: PLC0415
+            print(f" estado desta execução: {_e.pasta()}")
+            if not os.environ.get("CLAUDE_PLUGIN_DATA"):
+                print(" ATENÇÃO: numa sessão de verdade o Claude Code define CLAUDE_PLUGIN_DATA e o")
+                print("          estado vai para ~\\.claude\\plugins\\data\\...\\ai-brain-engine-v6\\ —")
+                print("          NÃO para a pasta acima. Conferir a de cima se lê como 'nada foi medido'.")
+        except Exception:
+            pass
         print("=" * (largura + 40))
         if faltando_essencial:
             print(f"FALTA ESSENCIAL: {len(faltando_essencial)} item(ns) — o motor não funciona assim.")

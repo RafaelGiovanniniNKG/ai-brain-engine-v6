@@ -1,4 +1,4 @@
-"""Prova do portão do encerramento: sete cenários, em ordem, com o veredito de cada um.
+"""Prova do portão do encerramento: doze cenários, em ordem, com o veredito de cada um.
 
 Rodar: python testes/prova_portao.py   (sai 0 se todos passarem)
 
@@ -72,9 +72,28 @@ def editou():
 
 
 def rodou_teste(saida: str, cmd: str = "dotnet test test/CqrsReference.Application.Tests"):
+    """Um teste que TERMINOU BEM (saída zero).
+
+    O `tool_use_result` vai na forma real: **lista de blocos** `{"type","text"}`.
+    O fixture antigo mandava string, coisa que o Claude Code nunca manda — e foi
+    por isso que o defeito da evidência vazia passou pela prova por semanas.
+    """
+    rodar("post_bash.py", {
+        "session_id": SESSAO, "tool_name": "Bash", "hook_event_name": "PostToolUse",
+        "tool_input": {"command": cmd},
+        "tool_use_result": [{"type": "text", "text": saida}], "cwd": REPO,
+    })
+
+
+def teste_falhou(saida: str, cmd: str = "dotnet test test/CqrsReference.Application.Tests"):
+    """Um teste que saiu com código NÃO-ZERO.
+
+    Esse caso não chega em `PostToolUse` — chega em `PostToolUseFailure`, e a
+    saída vem em `error`. Medido em 03/09/2026."""
     rodar("post_bash.py", {
         "session_id": SESSAO, "tool_name": "Bash",
-        "tool_input": {"command": cmd}, "tool_use_result": saida, "cwd": REPO,
+        "hook_event_name": "PostToolUseFailure",
+        "tool_input": {"command": cmd}, "error": saida, "cwd": REPO,
     })
 
 
@@ -161,6 +180,26 @@ import json as _json
 _p = estado._caminho_agente(REPO)
 _p.write_text(_json.dumps(antigo, ensure_ascii=False), encoding="utf-8")
 tudo.append(mostra("fora da validade -> libera (portão não vira armadilha)", stop(), "LIBEROU"))
+
+print("\n" + "=" * 70)
+print("11) teste com saída NÃO-ZERO (o evento de falha, que o motor era cego a ele)")
+limpar(); editou(); time.sleep(0.01)
+teste_falhou("Determining projects to restore...\nerror CS0246: type or namespace not found")
+reg = estado.ler(SESSAO).get("ultimo_teste") or {}
+tudo.append(mostra("execução vermelha É registrada, e como vermelha",
+                   ("NEGOU" if reg.get("ok") is False else f"ok={reg.get('ok')!r}")
+                   + " :: registro: " + json.dumps(reg, ensure_ascii=False)[:160],
+                   "NEGOU"))
+tudo.append(mostra("e o portão nega dizendo que FALHOU", stop(), "NEGOU"))
+
+print("\n" + "=" * 70)
+print("12) a evidência é gravada do formato REAL, não só de string")
+limpar(); editou(); time.sleep(0.01)
+rodou_teste("Test Run Successful.\nPassed!  - Failed: 0, Passed: 319, Skipped: 0, Total: 319")
+ev = ((estado.ler(SESSAO).get("ultimo_teste") or {}).get("evidencia") or "")
+tudo.append(mostra("a linha do placar chega ao registro (não fica vazia)",
+                   ("GRAVOU" if "Passed: 319" in ev else "VAZIA") + " :: evidencia: " + repr(ev),
+                   "GRAVOU"))
 
 limpar()
 print("\n" + "=" * 70)

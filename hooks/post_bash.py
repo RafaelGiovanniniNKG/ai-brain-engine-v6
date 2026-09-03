@@ -47,6 +47,42 @@ FALHA = (
 FALHA_MAIUSCULA = (r"\bFAILED\b", r"Build FAILED", r"\bFailed!", r"\bERROR\b")
 
 
+def _saida_do_comando(d: dict) -> str:
+    """A saída do comando, no formato que o Claude Code manda DE VERDADE.
+
+    `tool_use_result` chega como **lista de blocos** `{"type","text"}` — não como
+    string. O código antigo fazia `json.dumps` da lista, o que produz uma única
+    linha com `\\n` escapado, e aí os padrões ancorados em `^...$` de
+    `_evidencia` nunca casavam: em toda sessão real o registro saía com
+    `evidencia: ""`, enquanto a prova passava porque o fixture mandava string.
+    Medido em 03/09/2026 no estado da própria sessão.
+
+    Em `PostToolUseFailure` a saída não vem em `tool_use_result`, e sim em
+    `error` — sem ler esse campo, execução vermelha entra sem evidência nenhuma.
+    """
+    partes: list[str] = []
+    r = d.get("tool_use_result")
+    if isinstance(r, str):
+        partes.append(r)
+    elif isinstance(r, list):
+        for bloco in r:
+            if isinstance(bloco, str):
+                partes.append(bloco)
+            elif isinstance(bloco, dict):
+                for chave in ("text", "content", "output"):
+                    if isinstance(bloco.get(chave), str):
+                        partes.append(bloco[chave])
+                        break
+    elif isinstance(r, dict):
+        for chave in ("text", "stdout", "output"):
+            if isinstance(r.get(chave), str):
+                partes.append(r[chave])
+    for chave in ("error", "stderr"):
+        if isinstance(d.get(chave), str) and d[chave].strip():
+            partes.append(d[chave])
+    return "\n".join(partes).strip()
+
+
 def _evidencia(saida: str) -> str:
     """A linha do placar, guardada palavra por palavra.
 
@@ -72,7 +108,17 @@ def _tipo(cmd: str) -> str | None:
 
 
 def _veredito(d: dict, saida: str) -> bool | None:
-    """True/False quando dá para provar; None quando é indeterminado."""
+    """True/False quando dá para provar; None quando é indeterminado.
+
+    O EVENTO é o veredito mais confiável que existe aqui: comando com saída
+    não-zero dispara `PostToolUseFailure`, e só comando bem-sucedido dispara
+    `PostToolUse`. Medido em 03/09/2026 com o mesmo texto de comando em `exit 1`
+    e `exit 0` — só o segundo chegava, e o motor ficava cego a TODA execução
+    vermelha. Cego a vermelho abre um caminho de falso verde: teste do projeto A
+    reprova sem deixar rastro, teste do projeto B passa e o portão libera.
+    """
+    if d.get("hook_event_name") == "PostToolUseFailure":
+        return False
     r = d.get("tool_use_result")
     if isinstance(r, dict):
         for chave in ("exit_code", "exitCode", "returncode"):
@@ -99,8 +145,7 @@ def main() -> int:
     cmd = ((d.get("tool_input") or {}).get("command") or "")
     if not cmd:
         return 0
-    r = d.get("tool_use_result")
-    saida = r if isinstance(r, str) else json.dumps(r, ensure_ascii=False) if r else ""
+    saida = _saida_do_comando(d)
     sessao = d.get("session_id", "")
 
     # Commit bem-sucedido: a verdade que a conversa não pode falsear. O `git

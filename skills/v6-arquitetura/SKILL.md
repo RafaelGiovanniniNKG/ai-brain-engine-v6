@@ -9,7 +9,7 @@ A pergunta aqui não é se o código segue um padrão externo: é **onde a arqui
 
 Irmã da `v6-pr`, que olha arquitetura só dentro do diff de um PR. Esta varre o repositório todo.
 
-**Somente leitura no alvo.** Nenhum arquivo é escrito lá — nem o relatório. Ele vai para `Projetos/<projeto>/_log/<data>-validacao-arquitetura.md` no cofre. Build ou teste só com autorização explícita dele; ler metadados (`csproj`, `project.assets.json`, `git grep`) é livre.
+**Somente leitura no alvo.** Nenhum arquivo é escrito lá — nem o relatório. Ele vai para `Projetos/<projeto>/Validação de arquitetura — <data>.md` no cofre, como nota normal do projeto: o relatório é registro do que foi medido, não plano, e é para ser lido junto das outras notas do projeto. Build ou teste só com autorização explícita dele; ler metadados (`csproj`, `project.assets.json`, `git grep`) é livre.
 
 ## Os princípios, cada um nascido de um erro real de auditoria
 

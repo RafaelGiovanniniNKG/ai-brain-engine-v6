@@ -88,7 +88,16 @@ def _nota_indice(pasta: Path) -> tuple[str, Path] | None:
 
 
 def _ultimos_diarios(pasta: Path, quantos: int = 3) -> list[Path]:
-    for nome in ("_diario", "_diário", "_log"):
+    """`_log` NÃO entra aqui, de propósito.
+
+    O capturador do v4 escrevia em `_log` a foto do plan mode — o que se
+    pretendia fazer naquele minuto, não o que foi feito. Duas capturas do mesmo
+    plano, com oito minutos de diferença, diziam "6 gaps" e "5 gaps". Injetar
+    isso como "Registros recentes" é oferecer intenção velha como estado atual,
+    e a sessão não tem como saber a diferença. Esses arquivos foram para
+    `_arquivo`, na raiz do cofre, em 03/09/2026.
+    """
+    for nome in ("_diario", "_diário"):
         d = pasta / nome
         if d.is_dir():
             try:

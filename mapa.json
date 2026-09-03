@@ -5,10 +5,10 @@
   "mapa": {
     "cqrs-reference-architecture": "cqrs-reference-architecture",
     "Projeto-SiStockler.OperationalManagement": "SiStockler · OperationalManagement",
-    "sistockler-web": "sistockler-web",
-    "Projeto-SiStockler.Exportacao": "Projeto-SiStockler.Exportacao",
+    "sistockler-web": "SiStockler · Web (Angular)",
+    "Projeto-SiStockler.Exportacao": "SiStockler · Exportacao",
     "SiStockler.ControleEmbalagem": "SiStockler · ControleEmbalagem",
-    "SiStockler.CoffeePurchase": "SiStockler.CoffeePurchase",
+    "SiStockler.CoffeePurchase": "SiStockler · CoffeePurchase",
     "SiStockler.Serasa": "SiStockler · Serasa",
     "SiStockler.ServiceDesk": "SiStockler · ServiceDesk",
     "SiStockler.HanaIntegrator": "SiStockler · HanaIntegrator",

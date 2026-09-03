@@ -74,6 +74,11 @@
             "type": "command",
             "command": "python \"${CLAUDE_PLUGIN_ROOT}/hooks/guarda_commit.py\"",
             "timeout": 5000
+          },
+          {
+            "type": "command",
+            "command": "python \"${CLAUDE_PLUGIN_ROOT}/hooks/guarda_revisor.py\"",
+            "timeout": 5000
           }
         ]
       }

@@ -112,6 +112,7 @@ hooks/stop_gate       o portão: nega encerrar quando editou código e não prov
 hooks/reinjetar       devolve as regras quando a conversa é resumida ou o modelo troca
 hooks/gatilho_diario  dispara o resumo do dia em processo destacado
 hooks/guarda_commit   confere a mensagem de commit antes de ela ir
+hooks/guarda_revisor  revisor lê e relata; escrever é bloqueado antes de rodar
 hooks/doutor          o diagnóstico, uma linha por conferência
 hooks/vault           escrita no cofre: slug, frontmatter, UTF-8, escrita atômica
 captura/destilar      a chamada de modelo que resume a sessão, com plano B mecânico
@@ -120,8 +121,8 @@ sensores/             slopwatch, eslint próprio e a matriz de camadas — fora 
 skills/               v6-ideia, v6-conhecer, v6-tarefa, v6-revisar, v6-pr,
                       v6-arquitetura, v6-regra, v6-curar
 agents/               revisores de stack: csharp-reviewer, typescript-reviewer
-testes/               sete provas: plugin carrega, injeção, portão, diário, guarda,
-                      edição pelo terminal, reinjeção das regras
+testes/               oito provas: plugin carrega, injeção, portão, diário, guarda de
+                      commit, guarda de revisor, edição pelo terminal, reinjeção
 _prova/               saída da sonda; não versionado
 ```
 

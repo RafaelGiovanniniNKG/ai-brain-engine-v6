@@ -157,8 +157,27 @@ def main() -> int:
             estado.registrar_commit(sessao, sha_m.group(1), sha_m.group(2).strip(),
                                     str((d.get("cwd") or "")))
 
+    # Código mexido pelo TERMINAL, que não gera aviso de edição nenhum. Roda
+    # ANTES do registro de execução de propósito: se o mesmo comando editou e
+    # testou (`sed -i x.cs && dotnet test`), o teste tem de ficar com a hora
+    # MAIOR, senão o portão barraria um trabalho que acabou de ser provado.
+    repo = str(d.get("cwd") or "")
+    do_terminal = estado.registrar_edicoes_do_terminal(sessao, repo, cmd)
+
     tipo = _tipo(cmd)
     if not tipo:
+        if do_terminal:
+            sys.stdout.reconfigure(encoding="utf-8")
+            nomes = ", ".join(f"`{Path(a).name}`" for a in do_terminal[:5])
+            print(json.dumps({"hookSpecificOutput": {
+                "hookEventName": "PostToolUse",
+                "additionalContext": (
+                    "SENSOR DO MOTOR (v6) — você mexeu em código pelo TERMINAL, não pela "
+                    f"ferramenta de edição: {nomes}. O motor registrou como edição, e o "
+                    "encerramento vai pedir teste verde do mesmo jeito. Editar pelo terminal "
+                    "não é atalho para escapar da prova."
+                ),
+            }}, ensure_ascii=False))
         return 0
     # O `cwd` vai junto porque teste VERDE é o que dá baixa numa edição de
     # sub-agente pendente naquele diretório — sem isso a pendência sobreviveria

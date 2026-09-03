@@ -25,6 +25,7 @@ import os
 import re
 import subprocess
 import sys
+import time
 from datetime import datetime
 from pathlib import Path
 
@@ -161,13 +162,51 @@ def _sensores_faltando() -> str:
 def main() -> int:
     entrada = _ler_entrada()
     motivo = entrada.get("start_reason") or entrada.get("reason") or "startup"
+
+    # A hora de início fica marcada ANTES de qualquer coisa, e mesmo em sessão
+    # retomada. É ela que separa "arquivo que já estava sujo quando eu cheguei"
+    # de "arquivo que mudou nesta sessão" — sem essa marca, o sensor de edição
+    # pelo terminal registraria a sujeira alheia como trabalho meu, e o portão
+    # barraria a sessão por algo que ninguém tocou.
+    try:
+        import estado as estado_mod  # noqa: PLC0415
+        if not estado_mod.ler(entrada.get("session_id", "")).get("inicio"):
+            estado_mod.anotar(entrada.get("session_id", ""), inicio=time.time(),
+                              cwd=entrada.get("cwd", ""))
+    except Exception:
+        pass
+
     if motivo == "resume":
         return 0  # o contexto já está na conversa retomada
 
-    repo, _raiz_repo = _repo_de(entrada.get("cwd", ""))
+    bloco = montar_bloco(entrada.get("cwd", ""))
+    if not bloco:
+        return 0
+
+    sys.stdout.reconfigure(encoding="utf-8")
+    print(json.dumps(
+        {"hookSpecificOutput": {"hookEventName": "SessionStart", "additionalContext": bloco}},
+        ensure_ascii=False,
+    ))
+    return 0
+
+
+def montar_bloco(cwd: str, so_as_regras: bool = False) -> str:
+    """O bloco de contexto do projeto. Uma função, dois consumidores.
+
+    Foi extraído de `main` porque o início da sessão não é o único momento em
+    que este bloco precisa chegar ao modelo: quando a conversa fica longa o
+    programa a resume e joga o começo fora — as regras vivas incluídas — e
+    `SessionStart` NÃO dispara nesse caso. Ver `hooks/reinjetar.py`.
+
+    `so_as_regras` serve à reinjeção: depois de um resumo, a nota do projeto e o
+    aviso de orçamento provavelmente sobreviveram (ou o modelo sabe onde ler);
+    o que desaparece calado são as regras.
+    """
+    repo, _raiz_repo = _repo_de(cwd)
     partes: list[str] = [PREAMBULO, f"Projeto: {repo}"]
 
-    pasta = vault_mod.pasta_no_vault(repo)
+    pasta = None if so_as_regras else vault_mod.pasta_no_vault(repo)
     if pasta:
         nota = _nota_indice(pasta)
         if nota:
@@ -181,11 +220,11 @@ def main() -> int:
             partes.append(f"## Registros recentes (leia o arquivo se precisar do detalhe)\n{listados}")
         partes.append(f"Documentação deste projeto: {pasta} — pode ler qualquer nota daí.")
 
-    aviso = _orcamento_memoria()
+    aviso = "" if so_as_regras else _orcamento_memoria()
     if aviso:
         partes.insert(1, aviso)  # logo depois do preâmbulo: é o que não pode passar batido
 
-    faltando = _sensores_faltando()
+    faltando = "" if so_as_regras else _sensores_faltando()
     if faltando:
         partes.insert(1, faltando)
 
@@ -212,13 +251,7 @@ def main() -> int:
     bloco = base
     if len(bloco) > TETO_TOTAL:  # nem sem regra nenhuma cabe: sobra cortar a nota
         bloco = bloco[:TETO_TOTAL].rsplit("\n", 1)[0] + "\n[…] (nota do projeto truncada — leia o arquivo)"
-
-    sys.stdout.reconfigure(encoding="utf-8")
-    print(json.dumps(
-        {"hookSpecificOutput": {"hookEventName": "SessionStart", "additionalContext": bloco}},
-        ensure_ascii=False,
-    ))
-    return 0
+    return bloco
 
 
 if __name__ == "__main__":

@@ -39,10 +39,25 @@ O portão de encerramento vai te barrar se você editar código e não rodar tes
 
 1. **Especificação no vault** (`Projetos/<repo>/<slug da tarefa>.md`): o problema, o comportamento esperado, o que está fora do escopo, e o critério de pronto **executável** (um comando que ou passa ou não).
 2. **Plano no vault**, com as fatias em ordem e, para cada uma, a prova que a encerra. Fatia sem prova não é fatia, é intenção.
-3. **PARE e espere a aprovação dele.** Escreva isso na sua última linha, sem ambiguidade.
-4. Implementa **uma fatia por vez**, provando cada uma antes de seguir. Se a prova de uma fatia falhar, pare e conte — não acumule fatia vermelha.
-5. Ao fim de cada fatia, atualize o registro no vault com o que mudou e o placar.
-6. Fecha com `v6-revisar` sobre o diff inteiro.
+3. **Enquanto houver pergunta em aberto, não há plano.** Ponto que você não soube resolver vira item numerado esperando resposta dele, e o plano não é escrito por cima da dúvida. Plano que finge que a dúvida não existe é plano que vai ser refeito.
+4. **PARE e espere a aprovação dele.** Escreva isso na sua última linha, sem ambiguidade.
+5. Implementa **uma fatia por vez**, provando cada uma antes de seguir. Se a prova de uma fatia falhar, pare e conte — não acumule fatia vermelha.
+6. Ao fim de cada fatia, atualize o registro no vault com o que mudou e o placar.
+7. Fecha com `v6-revisar` sobre o diff inteiro.
+
+### Cada fatia tem de se bastar
+
+A fatia 4 de um plano grande vai ser executada por uma sessão que não viveu as fatias 1 a 3 — porque o contexto compactou, porque o dia acabou, ou porque ele voltou uma semana depois. Se a fatia só faz sentido lendo o plano inteiro, ela não vai ser executada como foi pensada.
+
+Então **cada fatia, no vault, carrega dentro dela**:
+
+- **o que muda**, em uma ou duas frases, sem depender das fatias anteriores;
+- **quais arquivos** ela toca, com caminho;
+- **a invariante que ela não pode quebrar** — a regra do sistema que continua valendo depois dela, dita como frase verificável;
+- **o critério de pronto executável**: o comando, e o que a saída tem de dizer;
+- **o que ela deliberadamente NÃO faz**, para a sessão seguinte não achar que faltou.
+
+O teste da fatia é este: *uma sessão nova, lendo só esta fatia, consegue executá-la?* Se não, ela está incompleta — e o custo de descobrir isso agora é um parágrafo, enquanto o custo de descobrir depois é uma sessão inteira perdida remontando o contexto.
 
 ## Regras da casa que valem nos três
 

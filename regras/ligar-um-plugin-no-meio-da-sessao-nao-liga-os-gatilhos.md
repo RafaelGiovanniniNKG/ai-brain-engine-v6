@@ -8,4 +8,6 @@ status: active
 ---
 Plugin religado no meio da sessão **não** tem gatilhos vivos nela: `claude plugin list` e o
 diagnóstico leem a configuração, não o que a sessão carregou. Depois de mexer em plugin, abra
-sessão nova antes de afirmar que o motor está medindo — e desconfie de pasta de estado vazia.
+sessão nova antes de afirmar que o motor está medindo. Mas antes de culpar o carregamento, confira
+a pasta de estado CERTA — [[pasta-de-dados-do-plugin-nao-e-localappdata]]: pasta vazia é quase
+sempre a pasta errada, não gatilho morto.

@@ -74,6 +74,16 @@ def main() -> int:
     sessao = d.get("session_id", "")
     est = estado.ler(sessao)
     edicao = est.get("ultima_edicao")
+
+    # Edição feita dentro de um sub-agente. Vem de um registro endereçado pelo
+    # diretório porque não está documentado se o sub-agente carrega o mesmo
+    # `session_id` de quem o chamou — e se não carregar, ela não está em `est`.
+    # Delegar trabalho não pode ser um jeito de escapar do portão.
+    de_agente = estado.edicao_de_agente(d.get("cwd", ""))
+    if de_agente and float(de_agente.get("ts") or 0) > float((edicao or {}).get("ts") or 0):
+        edicao = {"ts": de_agente["ts"], "arquivo": de_agente.get("arquivo", ""),
+                  "repo": "", "agente": de_agente.get("agente", "")}
+
     if not edicao:
         return 0  # nada de código foi editado nesta sessão
 
@@ -123,7 +133,14 @@ def main() -> int:
     if not motivo:
         # verde provado depois da última edição: não repito o que já foi provado
         estado.anotar(sessao, bloqueios=0)
+        estado.limpar_edicao_de_agente(d.get("cwd", ""))
         return 0
+
+    if edicao.get("agente"):
+        motivo += (
+            f" A edição foi feita pelo sub-agente `{edicao['agente']}` — "
+            "delegar não dispensa a prova, e o sub-agente não roda o teste por você."
+        )
 
     sensor = est.get("sensor_reprovou")
     extra = ""

@@ -197,6 +197,18 @@ def main() -> int:
     # existência da edição, não a existência de reprovação.
     estado.registrar_edicao(d.get("session_id", ""), str(arquivo), str(repo) if repo else None, texto)
 
+    # `agent_id` só vem preenchido quando este hook disparou DENTRO de um
+    # sub-agente. Nesse caso a edição vai também para o registro endereçado pelo
+    # diretório, porque não está documentado se o sub-agente carrega o mesmo
+    # `session_id` de quem o chamou — e se não carregar, a linha acima grava num
+    # lugar que o portão da sessão principal nunca lê.
+    if d.get("agent_id"):
+        estado.registrar_edicao_de_agente(
+            d.get("cwd") or (str(repo) if repo else str(arquivo.parent)),
+            str(arquivo),
+            d.get("agent_type") or "",
+        )
+
     if not texto:
         return 0
 

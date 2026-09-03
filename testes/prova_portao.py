@@ -48,6 +48,20 @@ def stop() -> str:
 
 def limpar():
     estado.gravar(SESSAO, {})
+    # O registro de edição de sub-agente é endereçado pelo diretório e sobrevive
+    # à sessão de propósito — então limpar a sessão sem limpar ele deixaria
+    # pendência de um cenário vazando para o próximo.
+    estado.limpar_edicao_de_agente(REPO)
+
+
+def editou_por_subagente(sessao_do_agente: str = "sessao-outra-do-subagente"):
+    """Uma edição feita DENTRO de um sub-agente, no pior caso: o sub-agente
+    recebeu um `session_id` diferente do da sessão que o chamou."""
+    rodar("post_edit.py", {
+        "session_id": sessao_do_agente, "tool_name": "Edit",
+        "tool_input": {"file_path": ARQ}, "cwd": REPO,
+        "agent_id": "aca0bfa3664b75352", "agent_type": "general-purpose",
+    })
 
 
 def editou():
@@ -122,6 +136,31 @@ for i in (1, 2, 3):
     tudo.append(r.startswith("NEGOU"))
 r4 = stop()
 tudo.append(mostra("na 4a vez desiste e AVISA que não está verificado", r4, "LIBEROU"))
+
+print("\n" + "=" * 70)
+print("8) sub-agente editou código, com session_id DIFERENTE do da sessão")
+limpar(); editou_por_subagente()
+r8 = stop()
+tudo.append(mostra("delegar não escapa do portão -> nega", r8, "NEGOU"))
+tudo.append(mostra("e a recusa diz que foi o sub-agente",
+                   ("NEGOU" if "sub-agente" in r8 else "não disse") + " :: " + r8.split(" :: ", 1)[-1],
+                   "NEGOU"))
+
+print("\n" + "=" * 70)
+print("9) teste verde depois da edição do sub-agente")
+rodou_teste("Passed!  - Failed: 0, Passed: 319, Skipped: 0, Total: 319")
+tudo.append(mostra("verde dá baixa na pendência do sub-agente -> libera", stop(), "LIBEROU"))
+
+print("\n" + "=" * 70)
+print("10) pendência de sub-agente velha não pode travar sessão futura")
+limpar(); editou_por_subagente()
+antigo = estado.edicao_de_agente(REPO)
+antigo["ts"] = time.time() - (estado.VALIDADE_AGENTE_SEG + 60)
+estado.registrar_edicao_de_agente(REPO, ARQ, "general-purpose")
+import json as _json
+_p = estado._caminho_agente(REPO)
+_p.write_text(_json.dumps(antigo, ensure_ascii=False), encoding="utf-8")
+tudo.append(mostra("fora da validade -> libera (portão não vira armadilha)", stop(), "LIBEROU"))
 
 limpar()
 print("\n" + "=" * 70)

@@ -115,7 +115,11 @@ def main() -> int:
     tipo = _tipo(cmd)
     if not tipo:
         return 0
-    estado.registrar_execucao(sessao, cmd, tipo, _veredito(d, saida), _evidencia(saida))
+    # O `cwd` vai junto porque teste VERDE é o que dá baixa numa edição de
+    # sub-agente pendente naquele diretório — sem isso a pendência sobreviveria
+    # ao próprio conserto e barraria a sessão seguinte sem motivo.
+    estado.registrar_execucao(sessao, cmd, tipo, _veredito(d, saida), _evidencia(saida),
+                              cwd=str(d.get("cwd") or ""))
     return 0
 
 

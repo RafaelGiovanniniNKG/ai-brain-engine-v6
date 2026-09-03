@@ -139,7 +139,7 @@ def _veredito(d: dict, saida: str) -> bool | None:
 
 def main() -> int:
     try:
-        d = json.loads(sys.stdin.read() or "{}")
+        d = json.loads(sys.stdin.buffer.read().decode("utf-8", errors="replace") or "{}")
     except Exception:
         return 0
     cmd = ((d.get("tool_input") or {}).get("command") or "")

@@ -51,7 +51,7 @@ RAIZ = Path(__file__).resolve().parent.parent
 
 def _ler_entrada() -> dict:
     try:
-        return json.loads(sys.stdin.read() or "{}")
+        return json.loads(sys.stdin.buffer.read().decode("utf-8", errors="replace") or "{}")
     except Exception:
         return {}
 

@@ -192,7 +192,7 @@ def detectar_bypass(comando: str) -> str | None:
 
 def main() -> int:
     try:
-        d = json.load(sys.stdin)
+        d = json.loads(sys.stdin.buffer.read().decode("utf-8", errors="replace") or "{}")
     except Exception:
         return 0  # sem entrada legível: não interfere
     cmd = (d.get("tool_input") or {}).get("command", "")

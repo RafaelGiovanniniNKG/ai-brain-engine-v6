@@ -40,7 +40,7 @@ def main() -> int:
     if os.environ.get("V6_FILHO"):
         return 0
     try:
-        d = json.loads(sys.stdin.read() or "{}")
+        d = json.loads(sys.stdin.buffer.read().decode("utf-8", errors="replace") or "{}")
     except Exception:
         return 0
 

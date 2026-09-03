@@ -40,7 +40,30 @@ b = injetar(str(RAIZ))
 mostra("injeta no próprio motor", len(b) > 300, f"{len(b)} chars")
 mostra("traz o preâmbulo de referência histórica",
        "REFERÊNCIA HISTÓRICA" in b and "NÃO deve ser reexecutado" in b)
-mostra("acento chega intacto (UTF-8 explícito)", "ação" in b or "não" in b)
+mostra("acento chega intacto na SAÍDA (UTF-8 explícito)", "ação" in b or "não" in b)
+
+# A ENTRADA também, e este caso nasceu de corrupção em produção: o pedido
+# `/v6-tarefa fechar ... o teste de licença declarada` foi gravado como
+# `licenÃ§a` no estado de uma sessão real da POC, e daí foi para o diário. Causa:
+# `sys.stdin.read()` decodifica com o padrão da máquina (cp1252 no Windows), e o
+# processo do gatilho roda SEM o modo UTF-8 do interpretador — enquanto o shell
+# interativo roda COM, o que faz o defeito não reproduzir quando se testa na mão.
+# Por isso o caso força `PYTHONUTF8=0`: sem isso ele passaria verde sempre.
+# O conserto é ler BYTES e decodificar explicitamente, o que independe do modo.
+_amb = dict(os.environ, PYTHONUTF8="0", PYTHONIOENCODING="")
+_payload = json.dumps({"session_id": "prova-injecao-encoding",
+                       "prompt": "fechar o teste de licença declarada e a ação",
+                       "cwd": str(RAIZ)}, ensure_ascii=False).encode("utf-8")
+subprocess.run([sys.executable, str(RAIZ / "hooks" / "user_prompt.py")],
+               input=_payload, capture_output=True, timeout=60, env=_amb)
+sys.path.insert(0, str(RAIZ / "hooks"))
+import estado as _estado  # noqa: E402
+_pedidos = (_estado.ler("prova-injecao-encoding").get("pedidos") or [])
+_texto = _pedidos[-1]["texto"] if _pedidos else ""
+mostra("acento chega intacto na ENTRADA, mesmo sem o modo UTF-8",
+       "licença" in _texto and "ação" in _texto,
+       _texto.encode("unicode_escape").decode("ascii")[:70])
+_estado.gravar("prova-injecao-encoding", {})
 mostra("traz regras vivas", "Regras aprendidas" in b)
 mostra("nunca corta regra no meio da frase",
        not b.rstrip().endswith(("-", ",", "que", "de", "e")) and "bloco truncado" not in b)

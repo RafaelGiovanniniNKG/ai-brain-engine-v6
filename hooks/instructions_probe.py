@@ -25,7 +25,7 @@ DESTINO = Path(__file__).resolve().parent.parent / "_prova" / "instrucoes-carreg
 
 def main() -> int:
     try:
-        d = json.loads(sys.stdin.read() or "{}")
+        d = json.loads(sys.stdin.buffer.read().decode("utf-8", errors="replace") or "{}")
     except Exception:
         return 0
     conteudo = d.get("content") or ""

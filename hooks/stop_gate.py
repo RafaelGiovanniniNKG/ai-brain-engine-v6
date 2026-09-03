@@ -67,7 +67,7 @@ def _projeto_de_teste(arquivo: str) -> str:
 
 def main() -> int:
     try:
-        d = json.loads(sys.stdin.read() or "{}")
+        d = json.loads(sys.stdin.buffer.read().decode("utf-8", errors="replace") or "{}")
     except Exception:
         return 0
 

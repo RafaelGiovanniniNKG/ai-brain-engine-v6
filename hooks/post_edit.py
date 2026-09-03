@@ -46,7 +46,7 @@ EXT_WEB = {".ts", ".tsx", ".mts", ".cts", ".js", ".mjs"}
 
 def _entrada() -> dict:
     try:
-        return json.loads(sys.stdin.read() or "{}")
+        return json.loads(sys.stdin.buffer.read().decode("utf-8", errors="replace") or "{}")
     except Exception:
         return {}
 

@@ -107,7 +107,9 @@ mapa.json             repo -> pasta do projeto no cofre
 hooks/hooks.json      todos os gatilhos; comando em STRING, nunca em lista
 hooks/session_start   monta o bloco de contexto (teto de 6.000 caracteres)
 hooks/post_edit       despacha os sensores no arquivo que acabou de ser editado
+hooks/post_bash       teste/build/commit, e o código mexido pelo TERMINAL
 hooks/stop_gate       o portão: nega encerrar quando editou código e não provou
+hooks/reinjetar       devolve as regras quando a conversa é resumida ou o modelo troca
 hooks/gatilho_diario  dispara o resumo do dia em processo destacado
 hooks/guarda_commit   confere a mensagem de commit antes de ela ir
 hooks/doutor          o diagnóstico, uma linha por conferência
@@ -118,7 +120,8 @@ sensores/             slopwatch, eslint próprio e a matriz de camadas — fora 
 skills/               v6-ideia, v6-conhecer, v6-tarefa, v6-revisar, v6-pr,
                       v6-arquitetura, v6-regra, v6-curar
 agents/               revisores de stack: csharp-reviewer, typescript-reviewer
-testes/               cinco provas: plugin carrega, injeção, portão, diário, guarda
+testes/               sete provas: plugin carrega, injeção, portão, diário, guarda,
+                      edição pelo terminal, reinjeção das regras
 _prova/               saída da sonda; não versionado
 ```
 

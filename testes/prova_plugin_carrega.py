@@ -93,6 +93,26 @@ except FileNotFoundError:
 except Exception as e:
     mostra("o plugin CARREGA sem erro", False, str(e)[:120])
 
+# 6) a conferência OFICIAL, que pega o que a minha não pega
+#
+# As cinco checagens acima são as que eu sei conferir: JSON válido, comando em
+# string, script existente, timeout declarado, frontmatter das skills. A
+# ferramenta confere outras coisas — tipo de campo no manifesto, caminho de
+# componente que escapa da raiz do plugin, nome de campo desconhecido,
+# frontmatter de agente que não parseia — e com `--strict` o aviso vira erro.
+# Prova caseira não substitui conferência do fabricante.
+try:
+    p = subprocess.run(["claude", "plugin", "validate", str(RAIZ), "--strict"],
+                       capture_output=True, text=True, encoding="utf-8",
+                       errors="replace", timeout=120)
+    saida = ((p.stdout or "") + (p.stderr or "")).strip()
+    mostra("a conferência oficial do plugin passa (--strict)", p.returncode == 0,
+           saida.splitlines()[-1][:120] if saida else "sem saída")
+except FileNotFoundError:
+    print("… `claude` não está no PATH; a conferência oficial foi pulada")
+except Exception as e:
+    mostra("a conferência oficial do plugin passa (--strict)", False, str(e)[:120])
+
 print("=" * 70)
 print(f"RESULTADO: {sum(tudo)}/{len(tudo)} cenários como esperado")
 sys.exit(0 if all(tudo) else 1)

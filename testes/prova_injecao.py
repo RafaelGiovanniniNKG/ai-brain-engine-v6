@@ -65,8 +65,16 @@ mostra("acento chega intacto na ENTRADA, mesmo sem o modo UTF-8",
        _texto.encode("unicode_escape").decode("ascii")[:70])
 _estado.gravar("prova-injecao-encoding", {})
 mostra("traz regras vivas", "Regras aprendidas" in b)
+# A última PALAVRA, não o último caractere: `endswith("e")` casa "existe", e a
+# regra que cai por último muda com a ordem da pasta — então o cenário reprovava
+# ou passava por sorte. Clone limpo do repo reprovava aqui em 04/09/2026 com o
+# bloco em 2.742 de 6.000, sem corte nenhum.
+_fim = b.rstrip()
+_ultima = _fim.split()[-1].strip(".,;:)]") if _fim.split() else ""
 mostra("nunca corta regra no meio da frase",
-       not b.rstrip().endswith(("-", ",", "que", "de", "e")) and "bloco truncado" not in b)
+       _ultima.lower() not in {"e", "de", "que", "da", "do", "em", "para", "com", "a", "o"}
+       and not _fim.endswith(("-", ","))
+       and "bloco truncado" not in b)
 mostra("respeita o teto de injeção", len(b) <= ss.TETO_TOTAL, f"{len(b)}/{ss.TETO_TOTAL}")
 
 poc = r"C:\Github\cqrs-reference-architecture"
